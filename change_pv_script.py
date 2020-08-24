@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QApplication,QLabel,QVBoxLayout
 from PyQt5.Qt import QRunnable, QThreadPool
 from PyQt5.QtCore import pyqtSlot
-
+import random
 import sys
 
 import time
@@ -23,7 +23,7 @@ class Worker(QRunnable):
     @pyqtSlot()
     def run(self):
         while True:
-            self.temperature += 1
+            self.temperature = random.randint(100, 150)
             self.set_temperature(self.temperature)
             time.sleep(1)
 
