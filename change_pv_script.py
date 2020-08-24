@@ -1,11 +1,69 @@
+from PyQt5.QtWidgets import QWidget, QApplication,QLabel,QVBoxLayout
+from PyQt5.Qt import QRunnable, QThreadPool
+from PyQt5.QtCore import pyqtSlot
+
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget
+
+import time
+from epics import PV
+
+p1 = PV('pv.VAL')
+
+class Worker(QRunnable):
+    '''
+    Worker thread
+    '''
+    def __init__(self, temperature ,  set_temperature , *args, **kwargs):
+
+        super(Worker, self).__init__()
+
+        self.set_temperature = set_temperature
+        self.temperature = temperature
+
+    @pyqtSlot()
+    def run(self):
+        while True:
+            self.temperature += 1
+            self.set_temperature(self.temperature)
+            time.sleep(1)
 
 
-app = QApplication(sys.argv)
+class Example(QWidget):
 
-window = QWidget()
-window.show() # IMPORTANT!!!!! Windows are hidden by default.
+    def __init__(self):
+        super().__init__()
 
-# Start the event loop.
-app.exec_()
+        self.threadpool = QThreadPool()
+
+        self.temperature = 20
+        self.label = QLabel(str(self.temperature))
+        self.initUI()
+        self.monitor_pv()
+
+
+    def set_temperature(self , *kk):
+        print(*kk)
+        self.label.setText(str(*kk))
+        self.update()
+
+
+    def monitor_pv(self):
+        worker = Worker(self.temperature , self.set_temperature)
+        self.threadpool.start(worker)
+
+    def initUI(self):
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.label)
+
+        self.setLayout(layout)
+
+        self.show()
+
+
+
+if __name__ == '__main__':
+
+    app = QApplication(sys.argv)
+    ex = Example()
+    sys.exit(app.exec_())
