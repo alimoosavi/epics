@@ -7,7 +7,7 @@ import sys
 import time
 from epics import PV
 
-p1 = PV('pv.VAL')
+temperature_pv = PV('temperature.VAL')
 
 class Worker(QRunnable):
     '''
@@ -24,6 +24,7 @@ class Worker(QRunnable):
     def run(self):
         while True:
             self.temperature = random.randint(100, 150)
+            temperature_pv.put(value = self.temperature)
             self.set_temperature(self.temperature)
             time.sleep(1)
 
