@@ -7,26 +7,37 @@ import sys
 import time
 from epics import PV
 
-temperature_pv = PV('temperature.VAL')
+temperature_pv_one = PV('temperature_one.VAL')
+temperature_pv_two = PV('temperature_two.VAL')
+
+temperature_default_value = 125
 
 class Worker(QRunnable):
     '''
     Worker thread
     '''
-    def __init__(self, temperature ,  set_temperature , *args, **kwargs):
+    def __init__(self,   set_temperature_one , set_temperature_two , *args, **kwargs):
 
         super(Worker, self).__init__()
 
-        self.set_temperature = set_temperature
-        self.temperature = temperature
+        self.set_temperature_one = set_temperature_one
+        self.set_temperature_two = set_temperature_two
 
     @pyqtSlot()
     def run(self):
         while True:
-            self.temperature = random.randint(100, 150)
-            temperature_pv.put(value = self.temperature)
-            self.set_temperature(self.temperature)
+
+            temp_rand = random.randint(100, 150)
+            temperature_pv_one.put(value = temp_rand)
+            self.set_temperature_one(temp_rand)
+
+
+            temp_rand = random.randint(100, 150)
+            temperature_pv_two.put(value = temp_rand)
+            self.set_temperature_two(temp_rand)
+
             time.sleep(1)
+
 
 
 class Example(QWidget):
@@ -36,26 +47,32 @@ class Example(QWidget):
 
         self.threadpool = QThreadPool()
 
-        self.temperature = 20
-        self.label = QLabel(str(self.temperature))
+        self.temperature_one_label = QLabel(str(temperature_default_value))
+        self.temperature_two_label = QLabel(str(temperature_default_value))
         self.initUI()
-        self.monitor_pv()
+        self.monitor_temperatures()
 
 
-    def set_temperature(self , *kk):
-        print(*kk)
-        self.label.setText(str(*kk))
+    def set_temperature_one(self , *kk):
+        print("temperature one" , *kk)
+        self.temperature_one_label.setText(str(*kk))
+        self.update()
+
+    def set_temperature_two(self , *kk):
+        print("temperature two" , *kk)
+        self.temperature_two_label.setText(str(*kk))
         self.update()
 
 
-    def monitor_pv(self):
-        worker = Worker(self.temperature , self.set_temperature)
+    def monitor_temperatures(self):
+        worker = Worker(self.set_temperature_one , self.set_temperature_two)
         self.threadpool.start(worker)
 
     def initUI(self):
 
         layout = QVBoxLayout()
-        layout.addWidget(self.label)
+        layout.addWidget(self.temperature_one_label)
+        layout.addWidget(self.temperature_two_label)
 
         self.setLayout(layout)
 
