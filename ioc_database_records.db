@@ -1,0 +1,22 @@
+record(ai, "temperature_one")
+{
+        field(DESC, "Water temperature in the fish tank")
+        field(FLNK, "temperature_averange")
+}
+
+
+record(ai, "temperature_two")
+{
+        field(DESC, "Water temperature in the fish tank")
+        field(FLNK, "temperature_averange")
+}
+
+
+record(calc, "temperature_average")
+ {
+ field(C, 125)
+ field(CALC, "(A+B)/2 > C")
+ field(SCAN, ".1 second")
+ field(INPA, "temperature_one.VAL PP MS")
+ field(INPB, "temperature_two.VAL PP MS")
+}
