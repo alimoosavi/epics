@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QVBoxLayout, QMainWindow , QHBoxLayout
+from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QVBoxLayout, QMainWindow, QHBoxLayout
 from PyQt5.Qt import QRunnable, QThreadPool
 from PyQt5.QtCore import pyqtSlot
 import random
@@ -46,7 +46,12 @@ class Example(QMainWindow):
         self.graphWidget1 = pg.PlotWidget()
         self.graphWidget1.setBackground('w')
 
-        pen = pg.mkPen(color=(255, 0, 0))
+        pen1 = pg.mkPen(color=(255, 0, 0))
+
+        self.graphWidget2 = pg.PlotWidget()
+        self.graphWidget2.setBackground('w')
+
+        pen2 = pg.mkPen(color=(255, 0, 0))
 
         self.setGeometry(60, 60, 1000, 1000)
         self.setWindowTitle('monitor temperatures')
@@ -57,12 +62,10 @@ class Example(QMainWindow):
         self.first_temperature_previous_records = [temperature_default_value]
         self.second_temperature_previous_records = [temperature_default_value]
 
-
         self.threadpool = QThreadPool()
 
         self.temperature_one_label = QLabel(str(temperature_default_value), self)
         self.temperature_two_label = QLabel(str(temperature_default_value), self)
-
 
         self.initUI()
         self.monitor_temperatures()
@@ -74,17 +77,18 @@ class Example(QMainWindow):
         self.temperature_one_label.resize(200, 200)
         self.temperature_two_label.resize(200, 200)
 
-
         self.temperature_one_label.setStyleSheet("border: 3px solid blue; border-radius: 400 px;")
         self.temperature_two_label.setStyleSheet("border: 3px solid blue; border-radius: 400 px;")
 
-        self.first_temperature_data_line =  self.graphWidget1.plot(self.first_temperature_x, self.first_temperature_previous_records, pen=pen)
+        self.first_temperature_data_line = self.graphWidget1.plot(self.first_temperature_x,
+                                                                  self.first_temperature_previous_records, pen=pen1)
+        self.second_temperature_data_line = self.graphWidget2.plot(self.second_temperature_x,
+                                                                   self.second_temperature_previous_records, pen=pen2)
+
     def set_temperature_one(self, *first_temp):
         print("temperature one", *first_temp)
 
         self.first_temperature_x.append(self.first_temperature_x[-1] + 1)  # Add a new value 1 higher than the last.
-
-
 
         if len(self.first_temperature_previous_records) >= 6:
             self.first_temperature_previous_records = self.first_temperature_previous_records[1:]
@@ -94,12 +98,24 @@ class Example(QMainWindow):
 
         self.temperature_one_label.setText(str(*first_temp))
         print(self.first_temperature_x, self.first_temperature_previous_records)
-        self.first_temperature_data_line.setData(self.first_temperature_x, self.first_temperature_previous_records)  # Update the data.
+        self.first_temperature_data_line.setData(self.first_temperature_x,
+                                                 self.first_temperature_previous_records)  # Update the data.
 
-    def set_temperature_two(self, *kk):
-        print("temperature two", *kk)
-        self.temperature_two_label.setText(str(*kk))
-        self.update()
+    def set_temperature_two(self, *second_temp):
+        print("temperature two", *second_temp)
+
+        self.second_temperature_x.append(self.second_temperature_x[-1] + 1)  # Add a new value 1 higher than the last.
+
+        if len(self.second_temperature_previous_records) >= 6:
+            self.second_temperature_previous_records = self.second_temperature_previous_records[1:]
+            self.second_temperature_x = self.second_temperature_x[1:]  # Remove the first y element.
+
+        self.second_temperature_previous_records.append(*second_temp)
+
+        self.temperature_two_label.setText(str(*second_temp))
+        print(self.second_temperature_x, self.second_temperature_previous_records)
+        self.second_temperature_data_line.setData(self.second_temperature_x,
+                                                  self.second_temperature_previous_records)  # Update the data.
 
 
     def monitor_temperatures(self):
@@ -110,6 +126,7 @@ class Example(QMainWindow):
         ll = QVBoxLayout()
 
         ll1 = QVBoxLayout()
+        ll2 = QVBoxLayout()
 
         layout = QHBoxLayout()
         layout.addSpacing(10)
@@ -117,9 +134,11 @@ class Example(QMainWindow):
         layout.addWidget(self.temperature_two_label)
 
         ll1.addWidget(self.graphWidget1)
+        ll2.addWidget(self.graphWidget2)
 
         ll.addLayout(layout)
         ll.addLayout(ll1)
+        ll.addLayout(ll2)
         widget = QWidget()
         widget.setLayout(ll)
         self.setCentralWidget(widget)
