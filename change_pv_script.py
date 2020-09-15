@@ -6,6 +6,24 @@ import sys
 import pyqtgraph as pg
 import time
 from epics import PV, Alarm, poll
+import datetime
+
+import mysql.connector
+
+mydb = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="root",
+    database="epics"
+)
+
+mycursor = mydb.cursor()
+
+try:
+    mycursor.execute(
+        "CREATE TABLE pv_logs (id INT AUTO_INCREMENT PRIMARY KEY, pv_name VARCHAR(255), value integer , time VARCHAR(255) )")
+except:
+    print("table already exists!")
 
 temperature_pv_one = PV('temperature_one.VAL')
 temperature_pv_two = PV('temperature_two.VAL')
@@ -128,6 +146,12 @@ class Example(QMainWindow):
 
         self.temperature_one_label.setText(str(*first_temp))
         print(self.first_temperature_x, self.first_temperature_previous_records)
+
+        sql = "INSERT INTO pv_logs (pv_name, value , time) VALUES (%s, %s , %s)"
+        val = ("first_temperature", *first_temp, datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
+        mycursor.execute(sql, val)
+        mydb.commit()
+
         self.first_temperature_data_line.setData(self.first_temperature_x,
                                                  self.first_temperature_previous_records)  # Update the data.
 
@@ -144,6 +168,12 @@ class Example(QMainWindow):
 
         self.temperature_two_label.setText(str(*second_temp))
         print(self.second_temperature_x, self.second_temperature_previous_records)
+
+        sql = "INSERT INTO pv_logs (pv_name, value , time) VALUES (%s, %s , %s)"
+        val = ("second_temperature", *second_temp, datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
+        mycursor.execute(sql, val)
+        mydb.commit()
+
         self.second_temperature_data_line.setData(self.second_temperature_x,
                                                   self.second_temperature_previous_records)  # Update the data.
 
@@ -157,7 +187,6 @@ class Example(QMainWindow):
 
     def alarm_on(self, **k):
         self.situation.setText('normal')
-
 
     def alarm_off(self, **k):
         self.situation.setText('critical')
