@@ -5,12 +5,40 @@ import random
 import sys
 import pyqtgraph as pg
 import time
-from epics import PV
+from epics import PV, Alarm, poll
 
 temperature_pv_one = PV('temperature_one.VAL')
 temperature_pv_two = PV('temperature_two.VAL')
 
 temperature_default_value = 125
+
+
+class Alarm_Worker(QRunnable):
+    '''
+    Worker thread
+    '''
+
+    def __init__(self, turn_on, turn_off, *args, **kwargs):
+        super(Alarm_Worker, self).__init__()
+
+        self.turn_on = turn_on
+        self.turn_off = turn_off
+
+    @pyqtSlot()
+    def run(self):
+        switch_lamp_on_alarm = Alarm(pvname='temperature_average.VAL',
+                                     comparison='==',
+                                     callback=self.turn_on,
+                                     trip_point=1,
+                                     )
+
+        switch_lamp_off_alarm = Alarm(pvname='temperature_average.VAL',
+                                      comparison='==',
+                                      callback=self.turn_off,
+                                      trip_point=0,
+                                      )
+        while True:
+            poll()
 
 
 class Worker(QRunnable):
@@ -34,7 +62,6 @@ class Worker(QRunnable):
             temp_rand = random.randint(100, 150)
             temperature_pv_two.put(value=temp_rand)
             self.set_temperature_two(temp_rand)
-
             time.sleep(1)
 
 
@@ -67,8 +94,6 @@ class Example(QMainWindow):
         self.temperature_one_label = QLabel(str(temperature_default_value), self)
         self.temperature_two_label = QLabel(str(temperature_default_value), self)
 
-        self.initUI()
-        self.monitor_temperatures()
 
         # moving position
         self.temperature_one_label.move(200, 200)
@@ -84,6 +109,9 @@ class Example(QMainWindow):
                                                                   self.first_temperature_previous_records, pen=pen1)
         self.second_temperature_data_line = self.graphWidget2.plot(self.second_temperature_x,
                                                                    self.second_temperature_previous_records, pen=pen2)
+
+        self.initUI()
+        self.monitor_temperatures()
 
     def set_temperature_one(self, *first_temp):
         print("temperature one", *first_temp)
@@ -117,10 +145,19 @@ class Example(QMainWindow):
         self.second_temperature_data_line.setData(self.second_temperature_x,
                                                   self.second_temperature_previous_records)  # Update the data.
 
-
     def monitor_temperatures(self):
+
         worker = Worker(self.set_temperature_one, self.set_temperature_two)
+        alarm_worker = Alarm_Worker(self.alarm_on, self.alarm_off)
+
         self.threadpool.start(worker)
+        self.threadpool.start(alarm_worker)
+
+    def alarm_on(self, **k):
+        print('alarm on')
+
+    def alarm_off(self , **k):
+        print('alarm off')
 
     def initUI(self):
         ll = QVBoxLayout()
