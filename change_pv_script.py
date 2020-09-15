@@ -93,17 +93,19 @@ class Example(QMainWindow):
 
         self.temperature_one_label = QLabel(str(temperature_default_value), self)
         self.temperature_two_label = QLabel(str(temperature_default_value), self)
-
+        self.situation = QLabel('normal', self)
 
         # moving position
-        self.temperature_one_label.move(200, 200)
-        self.temperature_two_label.move(500, 200)
+        # self.temperature_one_label.move(200, 200)
+        # self.temperature_two_label.move(500, 200)
 
         self.temperature_one_label.resize(200, 200)
         self.temperature_two_label.resize(200, 200)
+        self.situation.resize(200, 200)
 
         self.temperature_one_label.setStyleSheet("border: 3px solid blue; border-radius: 400 px;")
         self.temperature_two_label.setStyleSheet("border: 3px solid blue; border-radius: 400 px;")
+        self.situation.setStyleSheet("border: 3px solid red; border-radius: 400 px;")
 
         self.first_temperature_data_line = self.graphWidget1.plot(self.first_temperature_x,
                                                                   self.first_temperature_previous_records, pen=pen1)
@@ -154,10 +156,11 @@ class Example(QMainWindow):
         self.threadpool.start(alarm_worker)
 
     def alarm_on(self, **k):
-        print('alarm on')
+        self.situation.setText('normal')
 
-    def alarm_off(self , **k):
-        print('alarm off')
+
+    def alarm_off(self, **k):
+        self.situation.setText('critical')
 
     def initUI(self):
         ll = QVBoxLayout()
@@ -168,6 +171,7 @@ class Example(QMainWindow):
         layout = QHBoxLayout()
         layout.addSpacing(10)
         layout.addWidget(self.temperature_one_label)
+        layout.addWidget(self.situation)
         layout.addWidget(self.temperature_two_label)
 
         ll1.addWidget(self.graphWidget1)
