@@ -1,56 +1,65 @@
+import sys
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt
+import pandas as pd
 import mysql.connector
-# from epics import Alarm, poll
-import epics
-import time
 
-# mydb = mysql.connector.connect(
-#   host="localhost",
-#   user="root",
-#   password="root"
-# )
-#
-#
-# mycursor = mydb.cursor()
-#
-# mycursor.execute("CREATE DATABASE epics")
-#
-# mycursor.execute("CREATE TABLE log_pvs (id INT AUTO_INCREMENT PRIMARY KEY , name VARCHAR(255), log VARCHAR(255))")
-#
-#
+mydb = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="root",
+    database="epics"
+)
+
+mycursor = mydb.cursor()
 
 
-# import epics
-def onChanges(pvname=None, value=None, char_value=None, **kw):
-    f = open("pv.log", "a")
-    f.write(pvname + " " + char_value + " " + time.ctime()+ "\n")
-    f.close()
-    # print('PV Changed! ', pvname, char_value, time.ctime())
+class TableModel(QtCore.QAbstractTableModel):
 
-pvname='pv'
+    def __init__(self, data):
+        super(TableModel, self).__init__()
+        self._data = data
 
-mypv = epics.PV(pvname)
-mypv.add_callback(onChanges)
+    def data(self, index, role):
+        if role == Qt.DisplayRole:
+            value = self._data.iloc[index.row(), index.column()]
+            return str(value)
 
-print('Now wait for changes')
+    def rowCount(self, index):
+        return self._data.shape[0]
 
-t0 = time.time()
-while time.time() - t0 < 60.0:
-    time.sleep(1.e-3)
-print('Done.')
+    def columnCount(self, index):
+        return self._data.shape[1]
+
+    def headerData(self, section, orientation, role):
+        # section is the index of the column/row.
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal:
+                return str(self._data.columns[section])
+
+            if orientation == Qt.Vertical:
+                return str(self._data.index[section])
 
 
-# fh = open('pv.log','w')
-# while True:
-#     epics.camonitor('pv.VAL',writer=fh.write)
-#     fh.close()
-# #
-# Alarm(pvname = 'pv.VAL',
-#                     comparison = '>',
-#                     callback = self.turn_on,
-#                             trip_point = 50.0,
-#                              )
-#
-# while True:
-#     poll()
-#
-# print(mydb)
+class MainWindow(QtWidgets.QMainWindow):
+
+    def __init__(self):
+        super().__init__()
+
+        self.table = QtWidgets.QTableView()
+
+        mycursor.execute("SELECT * FROM pv_logs;")
+        logs = mycursor.fetchall()
+
+        data = pd.DataFrame(logs, columns=['id' , 'pv name', 'value', 'time'])
+
+        self.model = TableModel(data)
+        self.table.setModel(self.model)
+
+        self.setCentralWidget(self.table)
+
+
+app = QtWidgets.QApplication(sys.argv)
+window = MainWindow()
+window.show()
+app.exec_()
