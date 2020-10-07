@@ -1,22 +1,103 @@
-record(ai, "temperature_one")
+record(ai, "Thermometer_1")
 {
-        field(DESC, "Water temperature in the fish tank")
-        field(FLNK, "temperature_averange")
+ field(DESC, "First Measured Temperature")
+ field(EGU, "kelvin")
+ field(SCAN, "Passive")
 }
 
-
-record(ai, "temperature_two")
+record(ai, "Thermometer_2")
 {
-        field(DESC, "Water temperature in the fish tank")
-        field(FLNK, "temperature_averange")
+ field(DESC, "Second Measured Temperature")
+ field(EGU, "kelvin")
+ field(SCAN, "Passive")
 }
 
+record(ai, "Thermometer_3")
+{
+ field(DESC, "Third Measured Temperature")
+ field(EGU, "kelvin")
+ field(SCAN, "Passive")
+}
 
-record(calc, "temperature_average")
- {
- field(C, 125)
- field(CALC, "(A+B)/2 > C")
+record(ai, "Threshold")
+{
+ field(DESC, "Temperature Threshold")
+ field(EGU, "kelvin")
+}
+
+record(ai, "Volume")
+{
+ field(DESC, "Gas Volume")
+ field(EGU, "cubic meter")
+ field(SCAN, "Passive")
+}
+
+record(ai, "N")
+{
+ field(DESC, "Gas Amount")
+ field(EGU, "mole")
+ field(SCAN, "Passive")
+}
+
+record(ao, "Pressure")
+{
+ field(DOL, "Ideal_Gas_Law.VAL PP MSS")
  field(SCAN, ".1 second")
- field(INPA, "temperature_one.VAL PP MS")
- field(INPB, "temperature_two.VAL PP MS")
+ field(OMSL, "closed_loop")
+ field(EGU, "pascal")
+}
+
+record(ao, "Chiller")
+{
+ field(DOL, "Alarm.VAL")
+ field(SCAN, "Passive")
+ field(OMSL, "closed_loop")
+}
+
+record(calc, "Temperature_Average")
+{
+ field(CALC, "(A+B+C)/3")
+ field(SCAN, "Passive")
+ field(INPA, "Thermometer_1.VAL PP")
+ field(INPB, "Thermometer_2.VAL PP")
+ field(INPC, "Thermometer_3.VAL PP")
+ field(FLNK, "Alarm")
+}
+
+record(calc, "Alarm")
+{
+ field(CALC, "A>B")
+ field(SCAN, "Passive")
+ field(INPA, "Temperature_Average.VAL")
+ field(INPB, "Threshold")
+ field(FLNK, "Chiller")
+}
+
+record(calc, "Ideal_Gas_Law")
+{
+ field(CALC, "8.3*A*B/C")
+ field(SCAN, "Passive")
+ field(INPA, "Temperature_Average.VAL PP")
+ field(INPB, "N.VAL PP")
+ field(INPC, "Volume.VAL PP")
+ field(HIHI, "1000")
+ field(HIGH, "900")
+ field(HHSV, "MAJOR")
+ field(HSV, "MINOR")
+}
+
+record(calc, "Time_Count")
+{
+ field(CALC, "A=1 ? B+1 : C")
+ field(SCAN, "1 second")
+ field(INPA, "Alarm.VAL")
+ field(INPB, "Time_Count0.VAL")
+ field(INPC, "Time_Count0.VAL")
+}
+
+record(calc, "Time_Count0")
+{
+ field(CALC, "A+0")
+ field(SCAN, ".1 second")
+ field(INPA, "Time_Count.VAL")
 }
